@@ -1,7 +1,4 @@
 #!/bin/bash
-
-
-
 # usage menu
 echo
 echo "---------------------- Usage ----------------------"
@@ -65,10 +62,9 @@ else
 fi
 
 # vars declaration
-
 sysdate=$(date +"%Y-%m-%dT%H:%M.%S.%3N+02:00")
 timestamp_PAN=$(date +"%Y%m%d")
-
+aperto_BOOL=false
 plate_f=${PLATE_NUMBER:0:2}
 plate_number=${PLATE_NUMBER:2:3}
 plate_l=${PLATE_NUMBER:5:2}
@@ -83,10 +79,7 @@ else
 fi
 
 id_temporale_ENTRATA=$(date -d "-$(expr $time_old - 4) min" +"%Y-%m-%dT%H:%M.%S.%3N+02:00")
-# sysdate -4315 to wait the SET timeout (for the Uscita event)
 id_temporale_USCITA=$(date -d "-$(expr $time_old - 5) min" +"%Y-%m-%dT%H:%M.%S.%3N+02:00")
-
-aperto_BOOL=false
 
 if [ $TRATTA == 'EUS' ] || [ $TRATTA == 'US' ] ; then
 	direction='998'
@@ -108,7 +101,7 @@ i=0
 VIAGGIO_DIR="Viaggio-$TRATTA"
 mkdir $path_OUT_dir/$VIAGGIO_DIR
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
-echo -e "...created '$VIAGGIO_DIR' at path: '$path_VIAGGIO_dir' \n"
+echo -e "...created folder '$VIAGGIO_DIR' at path: '$path_VIAGGIO_dir' \n"
 chmod 0777 "$path_VIAGGIO_dir"
 while [[ $i -lt $length ]] ; do 
 	t=${TRATTA:i:1}
@@ -136,9 +129,9 @@ while [[ $i -lt $length ]] ; do
 
 		S)
 			if [ $direction == '998' ] ; then
-				nome_dir="PrimaSET"
+				nome_dir="DopoSET" # to do aggiungere anche caso OBU
 			else
-				nome_dir="DopoSET"
+				nome_dir="PrimaSET"
 			fi
 			filename="svincolo$nome_dir-$PUNTO_S.xml"
 			touch $path_VIAGGIO_dir/$filename
