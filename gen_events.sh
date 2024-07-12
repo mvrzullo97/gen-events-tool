@@ -69,14 +69,17 @@ plate_f=${PLATE_NUMBER:0:2}
 plate_number=${PLATE_NUMBER:2:3}
 plate_l=${PLATE_NUMBER:5:2}
 
+
 if [ $APPARATO == 'o' ] ; then
 	type_viaggio="OBU"
 	echo -e "...creating Viaggio OBU $TRATTA\n"
+	# escamotage to gen OBU with "randomness"
+	APPARATO=$(date "+%S%2N")
 	time_old=4320
 else 
 	type_viaggio="SET"
 	echo -e "...creating Viaggio SET $TRATTA\n"
-	PAN=$(generate_PAN $plate_number)
+	APPARATO=$(generate_PAN $plate_number)
 	time_old=720
 fi
 
@@ -101,6 +104,16 @@ fi
 length=${#TRATTA}
 i=0
 VIAGGIO_DIR="Viaggio$type_viaggio-$TRATTA"
+path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
+
+
+# cancellare a fine sviluppo da qui a...
+if [ -d $path_VIAGGIO_dir ] ; then 
+	rm -r $path_VIAGGIO_dir
+fi
+# fino a qui 
+
+
 mkdir $path_OUT_dir/$VIAGGIO_DIR
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 echo -e "...created folder '$VIAGGIO_DIR' at path: '$path_VIAGGIO_dir' \n"
@@ -109,36 +122,36 @@ while [[ $i -lt $length ]] ; do
 	t=${TRATTA:i:1}
     case $t in
         E)	
-			filename="entrataSET-$PUNTO_E.xml"
+			filename="entrata$type_viaggio-$PUNTO_E.xml"
 			touch $path_VIAGGIO_dir/$filename
 			echo -e "...creating file '$filename'\n"
-			echo -e "rete: $RETE_E\npunto: $PUNTO_E\nidTemporale: $id_temporale_ENTRATA\nserviceProvider: $SERVICE_PROVIDER\npan: $PAN\n"
+			echo -e "rete: $RETE_E\npunto: $PUNTO_E\nidTemporale: $id_temporale_ENTRATA\nserviceProvider: $SERVICE_PROVIDER\n$type_viaggio: $APPARATO \n"
 			# to do scrivi nel file .xml
 
 			((i++));;
 
 		U)	
 			if [ $aperto_BOOL == true ] ; then 
-				filename="uscitaApertoSET-$PUNTO_U.xml"
+				filename="uscitaAperto$type_viaggio-$PUNTO_U.xml"
 			else 
-				filename="uscitaChiusoSET-$PUNTO_U.xml"
+				filename="uscitaChiuso$type_viaggio-$PUNTO_U.xml"
 			fi
 			touch $path_VIAGGIO_dir/$filename
 			echo -e "...creating file '$filename'\n"
-			echo -e "rete: $RETE_U\npunto: $PUNTO_U\nidTemporale: $id_temporale_USCITA\nserviceProvider: $SERVICE_PROVIDER\npan: $PAN\n"
+			echo -e "rete: $RETE_U\npunto: $PUNTO_U\nidTemporale: $id_temporale_USCITA\nserviceProvider: $SERVICE_PROVIDER\n$type_viaggio: $APPARATO \n"
 
 			((i++));;
 
 		S)
 			if [ $direction == '998' ] ; then
-				nome_dir="DopoSET" # to do aggiungere anche caso OBU
+				nome_dir="Dopo$type_viaggio" # to do aggiungere anche caso OBU
 			else
-				nome_dir="PrimaSET"
+				nome_dir="Prima$type_viaggio"
 			fi
 			filename="svincolo$nome_dir-$PUNTO_S.xml"
 			touch $path_VIAGGIO_dir/$filename
 			echo -e "...creating file '$filename'\n"
-			echo -e "rete: $RETE_S\npunto: $PUNTO_S\nidTemporale: $id_temporale_SVINCOLO\nserviceProvider: $SERVICE_PROVIDER\npan: $PAN\n"
+			echo -e "rete: $RETE_S\npunto: $PUNTO_S\nidTemporale: $id_temporale_SVINCOLO\nserviceProvider: $SERVICE_PROVIDER\n$type_viaggio: $APPARATO \n"
 
 			((i++));;
 		
