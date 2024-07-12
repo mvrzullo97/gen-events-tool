@@ -70,9 +70,11 @@ plate_number=${PLATE_NUMBER:2:3}
 plate_l=${PLATE_NUMBER:5:2}
 
 if [ $APPARATO == 'o' ] ; then
+	type_viaggio="OBU"
 	echo -e "...creating Viaggio OBU $TRATTA\n"
 	time_old=4320
 else 
+	type_viaggio="SET"
 	echo -e "...creating Viaggio SET $TRATTA\n"
 	PAN=$(generate_PAN $plate_number)
 	time_old=720
@@ -98,7 +100,7 @@ fi
 # extract event type from TRATTA
 length=${#TRATTA}
 i=0
-VIAGGIO_DIR="Viaggio-$TRATTA"
+VIAGGIO_DIR="Viaggio$type_viaggio-$TRATTA"
 mkdir $path_OUT_dir/$VIAGGIO_DIR
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 echo -e "...created folder '$VIAGGIO_DIR' at path: '$path_VIAGGIO_dir' \n"
