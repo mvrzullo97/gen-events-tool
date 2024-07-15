@@ -2,7 +2,7 @@
 # usage menu
 echo
 echo "---------------------- Usage ----------------------"
-echo -e "\n   bash $0\n\n    -tr < tratta > (ex. EUS)\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato (o-s) >\n    -sp < codice Service Provider >\n    -pl < plate number >\n"
+echo -e "\n   bash $0\n\n    -tr < tratta > (ex. EUS)\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato (o [OBU] - s [SET]) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n"
 echo
 
 # Parsing degli OPTARGS
@@ -20,6 +20,8 @@ while [[ "$#" -gt 0 ]] ; do
 			 	shift 2;;
         -pu) PUNTO_U="$2"
 			 	shift 2;;
+		-de) DATI_ENTRATA="$2"
+				shift 2;;
 		-ps) PUNTO_S="$2"
 			 	shift 2;;
 		-ap) APPARATO="$2"
@@ -68,7 +70,11 @@ aperto_BOOL=false
 plate_f=${PLATE_NUMBER:0:2}
 plate_number=${PLATE_NUMBER:2:3}
 plate_l=${PLATE_NUMBER:5:2}
+dati_entrata_bool=false
 
+if [[ $DATI_ENTRATA =~ ^([yY])$ ]] ; then
+	dati_entrata_bool=true
+fi
 
 if [ $APPARATO == 'o' ] ; then
 	type_viaggio="OBU"
@@ -103,7 +109,7 @@ fi
 VIAGGIO_DIR="Viaggio$type_viaggio-$TRATTA"
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 
-# cancellare a fine sviluppo da qui a...
+# cancellare a fine sviluppo da qui a... (da capire se cancellare o meno)
 if [ -d $path_VIAGGIO_dir ] ; then 
 	rm -r $path_VIAGGIO_dir
 fi
@@ -186,6 +192,22 @@ fi
 cat << EOF >> "$path_VIAGGIO_dir/$filename"
     </infoVeicolo>
     <idViaggio mezzoPagamento="TL" />
+EOF
+
+if [ $dati_entrata_bool == true ] ; then
+cat << EOF >> "$path_VIAGGIO_dir/$filename"
+	<datiEntrata idTemporale="$id_temporale_ENTRATA" pista="12" classe="10">
+	<stazione rete = "$RETE_E" punto = "$PUNTO_E"/>
+EOF
+
+mv "$path_VIAGGIO_dir/$filename" "$path_VIAGGIO_dir/"${filename%.*}conDatiEntrata.xml""
+filename="${filename%.*}conDatiEntrata.xml"
+mv "$path_OUT_dir/$VIAGGIO_DIR" $path_OUT_dir/"$VIAGGIO_DIR-conDatiEntrata"
+VIAGGIO_DIR="Viaggio$type_viaggio-$TRATTA-conDatiEntrata"
+path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
+fi
+
+cat << EOF >> "$path_VIAGGIO_dir/$filename"
     <reg dataOraMittente="${sysdate}" />
 </ns0:evento>
 EOF
@@ -231,5 +253,7 @@ EOF
 		
     esac
 done
+
+
 
 echo -e "...all files are present at path: '$path_VIAGGIO_dir' \n"
