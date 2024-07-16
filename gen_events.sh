@@ -2,7 +2,7 @@
 # usage menu
 echo
 echo "---------------------- Usage ----------------------"
-echo -e "\n   bash $0\n\n    -tr < tratta > (ex. EUS)\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato (o [OBU] - s [SET]) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n"
+echo -e "\n   bash $0\n\n    -tr < tratta > (ex. EUS)\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ri < rete Itinere >\n    -pi < punto Itinere >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato (o [OBU] - s [SET]) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n"
 echo
 
 # Parsing degli OPTARGS
@@ -14,6 +14,10 @@ while [[ "$#" -gt 0 ]] ; do
 			 	shift 2;;
         -ru) RETE_U="$2"
 			 	shift 2;;
+		-ri) RETE_I="$2"
+				shift 2;;
+		-pi) PUNTO_I="$2"
+				shift 2;;
 		-rs) RETE_S="$2"
 			 	shift 2;;
 		-pe) PUNTO_E="$2"
@@ -34,6 +38,7 @@ while [[ "$#" -gt 0 ]] ; do
 			exit 0
     esac
 done
+
 
 function generate_PAN 
 {
@@ -89,7 +94,8 @@ else
 	time_old=720
 fi
 
-id_temporale_ENTRATA=$(date -d "-$(expr $time_old - 4) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+id_temporale_ENTRATA=$(date -d "-$(expr $time_old - 3) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+id_temporale_ITINERE=$(date -d "-$(expr $time_old - 4) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 id_temporale_USCITA=$(date -d "-$(expr $time_old - 5) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 
 if [ $TRATTA == 'EUS' ] || [ $TRATTA == 'US' ] ; then
@@ -109,11 +115,9 @@ fi
 VIAGGIO_DIR="Viaggio$type_viaggio-$TRATTA"
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 
-# cancellare a fine sviluppo da qui a... (da capire se cancellare o meno)
 if [ -d $path_VIAGGIO_dir ] ; then 
 	rm -r $path_VIAGGIO_dir
 fi
-# fino a qui 
 
 mkdir $path_OUT_dir/$VIAGGIO_DIR
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
@@ -158,6 +162,35 @@ cat << EOF >> "$path_VIAGGIO_dir/$filename"
 </ns0:evento>
 EOF
 			((i++));;
+
+		I)
+			filename="itinere$type_viaggio-$PUNTO_I.xml"
+			touch $path_VIAGGIO_dir/$filename
+			echo -e "...creating file '$filename'\n"
+			echo -e "rete: $RETE_I\npunto: $PUNTO_I\nidTemporale: $id_temporale_ITINERE\n$type_viaggio: $APPARATO \n"
+
+cat << EOF >> "$path_VIAGGIO_dir/$filename"
+<ns2:evento xmlns:ns2="http://transit.pr.auto.aitek.it/messages">
+	<tipoEvento cod="I"/>
+	<idSpaziale corsia="1" dirMarcia="1" periferica="1" progrMsg="17229" punto="${PUNTO_I}" rete="${RETE_I}" tipoPeriferica="B"/>
+	<idTemporale>${id_temporale_ITINERE}</idTemporale>
+	<infoVeicolo>
+EOF
+if [ $type_viaggio == 'SET' ] ; then
+cat << EOF >> "$path_VIAGGIO_dir/$filename"	
+		<SET CodiceIssuer="${SERVICE_PROVIDER}" PAN="${APPARATO}" nazione="IT"/>
+EOF
+else
+cat << EOF >> "$path_VIAGGIO_dir/$filename"	
+		<OBU>${APPARATO}</OBU>
+EOF
+fi
+cat << EOF >> "$path_VIAGGIO_dir/$filename"	
+	</infoVeicolo>
+	<reg dataOraMittente="${sysdate}"/>
+</ns2:evento>
+EOF
+		((i++));;
 
 		U)	
 			if [ $aperto_BOOL == true ] ; then 
