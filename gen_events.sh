@@ -231,6 +231,7 @@ if [ $dati_entrata_bool == true ] ; then
 cat << EOF >> "$path_VIAGGIO_dir/$filename"
 	<datiEntrata idTemporale="$id_temporale_ENTRATA" pista="12" classe="10">
 	<stazione rete = "$RETE_E" punto = "$PUNTO_E"/>
+	</datiEntrata>
 EOF
 
 mv "$path_VIAGGIO_dir/$filename" "$path_VIAGGIO_dir/"${filename%.*}conDatiEntrata.xml""
@@ -290,3 +291,4 @@ done
 
 
 echo -e "...all files are present at path: '$path_VIAGGIO_dir' \n"
+
