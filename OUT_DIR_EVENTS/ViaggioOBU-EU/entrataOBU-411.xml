@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns0:evento xmlns:ns0="http://transit.pr.auto.aitek.it/messages">
+    <tipoEvento cod="E" />
+    <idSpaziale periferica="62" progrMsg="1" corsia="0" dirMarcia="1" tipoPeriferica="P" rete="1" punto="411" />
+    <idTemporale>2024-07-15T11:56:37.732+02:00</idTemporale>
+    <infoVeicolo classe="10">
+        <targaAnt nomeFile="targaAnt.jpg" affid="9" nazione="IT">OB001UU</targaAnt>
+        <targaPost nomeFile="targaPost.jpg" affid="9" nazione="IT">OB001UU</targaPost>
+        <targaRif nazione="IT">OB001UU</targaRif>
+		<OBU>3772</OBU>
+	</infoVeicolo>
+    <reg dataOraMittente="2024-07-18T11:53:37.716+02:00" />
+</ns0:evento>

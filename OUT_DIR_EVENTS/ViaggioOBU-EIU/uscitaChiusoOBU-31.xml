@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ns0:evento xmlns:ns0="http://transit.pr.auto.aitek.it/messages">
     <tipoEvento cod="U" />
-    <idSpaziale periferica="62" progrMsg="4" corsia="0" dirMarcia="1" tipoPeriferica="P" rete="1" punto="414" />
-    <idTemporale>2024-07-18T00:24:47.546+02:00</idTemporale>
+    <idSpaziale periferica="62" progrMsg="4" corsia="0" dirMarcia="1" tipoPeriferica="P" rete="1" punto="31" />
+    <idTemporale>2024-07-18T00:27:01.383+02:00</idTemporale>
     <infoVeicolo classe="10">
         <targaAnt nomeFile="targaAnt.jpg" affid="9" nazione="IT">MM001MM</targaAnt>
         <targaPost nomeFile="targaPost.jpg" affid="9" nazione="IT">MM001MM</targaPost>  
         <targaRif nazione="IT">MM001MM</targaRif>
-		<SET CodiceIssuer="49" PAN="2024071800000000001F" nazione="FR" EFCContextMark="604006001D09"/>
+		<OBU>0135</OBU>
 	</infoVeicolo>
     <idViaggio mezzoPagamento="TL" />
-    <reg dataOraMittente="2024-07-18T12:19:47.509+02:00" />
+    <reg dataOraMittente="2024-07-18T12:22:01.349+02:00" />
 </ns0:evento>

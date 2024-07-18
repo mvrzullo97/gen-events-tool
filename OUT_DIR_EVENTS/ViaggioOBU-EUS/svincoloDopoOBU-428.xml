@@ -2,12 +2,12 @@
 <ns2:evento xmlns:ns2="http://transit.pr.auto.aitek.it/messages">
     <tipoEvento cod="S"/>
     <idSpaziale corsia="1" dirMarcia="1" periferica="1" progrMsg="17621" punto="428" rete="37" tipoPeriferica="B"/>
-    <idTemporale>2024-07-18T00:29:47.554+02:00</idTemporale>
+    <idTemporale>2024-07-18T00:31:19.426+02:00</idTemporale>
     <infoVeicolo>
-		<SET CodiceIssuer="49" PAN="2024071800000000001F" nazione="FR" EFCContextMark="604006001D09"/>
+		<OBU>1940</OBU>
     </infoVeicolo>
 	<datiEntrata>
 		<stazione rete="37" punto="998"/>
 	</datiEntrata>
-    <reg dataOraMittente="2024-07-18T12:19:47.509+02:00"/>
+    <reg dataOraMittente="2024-07-18T12:21:19.397+02:00"/>
 </ns2:evento>

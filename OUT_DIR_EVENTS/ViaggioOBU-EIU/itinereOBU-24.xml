@@ -1,0 +1,9 @@
+<ns2:evento xmlns:ns2="http://transit.pr.auto.aitek.it/messages">
+	<tipoEvento cod="I"/>
+	<idSpaziale corsia="1" dirMarcia="1" periferica="1" progrMsg="17229" punto="24" rete="41" tipoPeriferica="B"/>
+	<idTemporale>2024-07-18T00:26:01.375+02:00</idTemporale>
+	<infoVeicolo>
+		<OBU>0135</OBU>
+	</infoVeicolo>
+	<reg dataOraMittente="2024-07-18T12:22:01.349+02:00"/>
+</ns2:evento>
