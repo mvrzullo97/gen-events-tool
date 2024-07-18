@@ -39,7 +39,6 @@ while [[ "$#" -gt 0 ]] ; do
     esac
 done
 
-
 function generate_PAN 
 {
     plate_number=$1
@@ -81,17 +80,21 @@ if [[ $DATI_ENTRATA =~ ^([yY])$ ]] ; then
 	dati_entrata_bool=true
 fi
 
-if [ $APPARATO == 'o' ] ; then
-	type_viaggio="OBU"
-	echo -e "...creating Viaggio OBU $TRATTA\n"
-	# escamotage to gen OBU with "randomness"
-	APPARATO=$(date "+%S%2N")
-	time_old=4320
-else 
+if [ $APPARATO == 's' ] ; then
 	type_viaggio="SET"
 	echo -e "...creating Viaggio SET $TRATTA\n"
 	APPARATO=$(generate_PAN $plate_number)
 	time_old=720
+elif [ $APPARATO == 'o' ] ; then
+	type_viaggio="OBU"
+	echo -e "...creating Viaggio OBU $TRATTA\n"
+	# escamotage to gen OBU with "randomness"
+	APPARATO=$(date "+%S%2N")
+	if [ $TRATTA == 'EU' ] ; then 
+		time_old=4320
+	else
+		time_old=720
+	fi
 fi
 
 id_temporale_ENTRATA=$(date -d "-$(expr $time_old - 3) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
@@ -99,17 +102,19 @@ id_temporale_ITINERE=$(date -d "-$(expr $time_old - 4) min" +"%Y-%m-%dT%H:%M:%S.
 id_temporale_USCITA=$(date -d "-$(expr $time_old - 5) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 
 if [ $TRATTA == 'EUS' ] || [ $TRATTA == 'US' ] ; then
-	direction='998'
+	direction_svn='998'
 	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - 10) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 	if [ $TRATTA == 'US' ] ; then 
 		aperto_BOOL=true
 	fi
 elif [ $TRATTA == 'SEU' ] || [ $TRATTA == 'SU' ] ; then
-	direction='997'
+	direction_svn='997'
 	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - 3) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 	if [ $TRATTA == 'SU' ] ; then 
 		aperto_BOOL=true
 	fi
+elif [ $TRATTA == 'U' ] ; then
+	aperto_BOOL=true
 fi
 
 VIAGGIO_DIR="Viaggio$type_viaggio-$TRATTA"
@@ -193,8 +198,15 @@ EOF
 		((i++));;
 
 		U)	
-			if [ $aperto_BOOL == true ] ; then 
-				filename="uscitaAperto$type_viaggio-$PUNTO_U.xml"
+			if [ $aperto_BOOL == true ] && [ $TRATTA == 'US' ] ; then 
+				direction_usc=997
+				filename="uscitaAperto$type_viaggio-$PUNTO_U-dir$direction_usc.xml"
+			elif [ $aperto_BOOL == true ] && [ $TRATTA == 'SU' ] ; then
+				direction_usc=998
+				filename="uscitaAperto$type_viaggio-$PUNTO_U-dir$direction_usc.xml"	
+			elif [ $aperto_BOOL == true ] && [ $TRATTA == 'U' ] ; then
+				direction_usc=997
+				filename="uscitaAperto$type_viaggio-$PUNTO_U-dir$direction_usc.xml"
 			else 
 				filename="uscitaChiuso$type_viaggio-$PUNTO_U.xml"
 			fi
@@ -209,10 +221,15 @@ cat << EOF > "$path_VIAGGIO_dir/$filename"
     <idSpaziale periferica="62" progrMsg="4" corsia="0" dirMarcia="1" tipoPeriferica="P" rete="${RETE_U}" punto="${PUNTO_U}" />
     <idTemporale>${id_temporale_USCITA}</idTemporale>
     <infoVeicolo classe="10">
+EOF
+if ! [ $aperto_BOOL == true ] ; then
+cat << EOF >> "$path_VIAGGIO_dir/$filename"	
         <targaAnt nomeFile="targaAnt.jpg" affid="9" nazione="IT">${PLATE_NUMBER}</targaAnt>
         <targaPost nomeFile="targaPost.jpg" affid="9" nazione="IT">${PLATE_NUMBER}</targaPost>  
         <targaRif nazione="IT">${PLATE_NUMBER}</targaRif>
 EOF
+fi
+
 if [ $type_viaggio == 'SET' ] ; then
 cat << EOF >> "$path_VIAGGIO_dir/$filename"	
 		<SET CodiceIssuer="${SERVICE_PROVIDER}" PAN="${APPARATO}" nazione="IT" EFCContextMark="604006001D09"/>
@@ -222,10 +239,13 @@ cat << EOF >> "$path_VIAGGIO_dir/$filename"
 		<OBU>${APPARATO}</OBU>
 EOF
 fi
+
+if ! [ $aperto_BOOL == true ] ; then
 cat << EOF >> "$path_VIAGGIO_dir/$filename"
-    </infoVeicolo>
+	</infoVeicolo>
     <idViaggio mezzoPagamento="TL" />
 EOF
+fi
 
 if [ $dati_entrata_bool == true ] ; then
 cat << EOF >> "$path_VIAGGIO_dir/$filename"
@@ -239,6 +259,14 @@ filename="${filename%.*}conDatiEntrata.xml"
 mv "$path_OUT_dir/$VIAGGIO_DIR" $path_OUT_dir/"$VIAGGIO_DIR-conDatiEntrata"
 VIAGGIO_DIR="Viaggio$type_viaggio-$TRATTA-conDatiEntrata"
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
+
+elif [ $aperto_BOOL == true ] ; then 
+cat << EOF >> "$path_VIAGGIO_dir/$filename"
+	</infoVeicolo>
+	<datiEntrata>
+		<stazione rete="$RETE_U" punto="$direction_usc"/>
+	</datiEntrata>
+EOF
 fi
 
 cat << EOF >> "$path_VIAGGIO_dir/$filename"
@@ -248,7 +276,7 @@ EOF
 			((i++));;
 
 		S)
-			if [ $direction == '998' ] ; then
+			if [ $direction_svn == '998' ] ; then
 				nome_dir="Dopo$type_viaggio"
 			else
 				nome_dir="Prima$type_viaggio"
@@ -278,7 +306,7 @@ fi
 cat << EOF >> "$path_VIAGGIO_dir/$filename"
     </infoVeicolo>
 	<datiEntrata>
-		<stazione rete="${RETE_S}" punto="${direction}"/>
+		<stazione rete="${RETE_S}" punto="${direction_svn}"/>
 	</datiEntrata>
     <reg dataOraMittente="${sysdate}"/>
 </ns2:evento>
@@ -287,8 +315,6 @@ EOF
 		
     esac
 done
-
-
 
 echo -e "...all files are present at path: '$path_VIAGGIO_dir' \n"
 
