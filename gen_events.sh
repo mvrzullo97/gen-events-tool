@@ -2,7 +2,7 @@
 # usage menu
 echo
 echo "---------------------- Usage ----------------------"
-echo -e "\n   bash $0\n\n    -tr < tratta > (ex. EUS)\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ri < rete Itinere >\n    -pi < punto Itinere >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato (o [OBU] - s [SET]) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n"
+echo -e "\n   bash $0\n\n    -tr < tratta > (ex. 'EUS')\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ri < rete Itinere >\n    -pi < punto Itinere >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato ('o' for OBU or 's' for SET) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n"
 echo
 
 # Parsing degli OPTARGS
@@ -39,6 +39,48 @@ while [[ "$#" -gt 0 ]] ; do
     esac
 done
 
+echo "apparato $APPARATO"
+exit 0
+
+providers_code=('151' '2321' '3000' '7' '49')
+naz_providers=('IT' 'IT' 'IT' 'DE' 'FR')
+rete_svincoli=('37')
+punti_svincoli=('427' '428' '470')
+
+
+# input validation
+if [ ${#TRATTA} -gt 3 ] ; then
+	echo -e "Param error: '$TRATTA' is not valid \n"
+	exit 0
+elif ! [[ ${rete_svincoli[@]} =~ $RETE_S ]] ; then
+    echo -e "Param error: rete svincolo '$RETE_S' doesn't exist \n"
+    exit 0 
+elif ! [[ "$DATI_ENTRATA" =~ ^([yY])$ ]] && ! [[ "$DATI_ENTRATA" =~ ^([nN])$ ]] && ! [[ "$DATI_ENTRATA" == '' ]] ; then
+    echo -e "Param error: please digit valid value for -de param (yY-nN) \n"
+    exit 0
+elif ! [[ ${punti_svincoli[@]} =~ $PUNTO_S ]] ; then
+    echo -e "Param error: punto svincolo '$PUNTO_S' doesn't exist \n"
+    exit 0
+elif [[ $APPARATO != 'o' ]] && [[ $APPARATO != 's' ]] ; then
+	echo -e "Param error: please digit a valid apparato ('o' for OBU or 's' for SET) \n"
+    exit 0
+elif ! [[ ${providers_code[@]} =~ $S_PROVIDER ]] ; then
+    echo -e "Param error: service provider's code '$SERVICE_PROVIDER' doesn't exist \n"
+    exit 0
+elif [ ${#PLATE_NUMBER} != 7 ] ; then 
+    echo -e "Param error: length of targa veicolo must be 7 \n"
+    exit 0
+fi
+
+if [ $APPARATO == 's' ] ; then
+	declare -A hash_PVD_NAZ
+	length=${#providers_code[@]}
+	for ((i=0; i<$length; i++)) ; do
+		hash_PVD_NAZ["${providers_code[i]}"]="${naz_providers[i]}"
+	done
+	NAZ_SERVICE_PROVIDER=${hash_PVD_NAZ[$SERVICE_PROVIDER]}
+fi
+
 function generate_PAN 
 {
     plate_number=$1
@@ -71,29 +113,33 @@ fi
 sysdate=$(date +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 timestamp_PAN=$(date +"%Y%m%d")
 aperto_BOOL=false
+
 plate_f=${PLATE_NUMBER:0:2}
 plate_number=${PLATE_NUMBER:2:3}
 plate_l=${PLATE_NUMBER:5:2}
-dati_entrata_bool=false
 
+dati_entrata_bool=false
 if [[ $DATI_ENTRATA =~ ^([yY])$ ]] ; then
 	dati_entrata_bool=true
 fi
 
 if [ $APPARATO == 's' ] ; then
 	type_viaggio="SET"
-	echo -e "...creating Viaggio SET $TRATTA\n"
+	echo -e "...creating Viaggio 'SET' for tratta '$TRATTA'\n"
 	APPARATO=$(generate_PAN $plate_number)
 	time_old=720
+	timeout="it.aitek.auto.pr.viaggi.close_cert_timeout_hours"
 elif [ $APPARATO == 'o' ] ; then
 	type_viaggio="OBU"
-	echo -e "...creating Viaggio OBU $TRATTA\n"
+	echo -e "...creating Viaggio 'OBU' for tratta '$TRATTA'\n"
 	# escamotage to gen OBU with "randomness"
 	APPARATO=$(date "+%S%2N")
 	if [ $TRATTA == 'EU' ] ; then 
 		time_old=4320
+		timeout="it.aitek.auto.pr.viaggi.close_cert_timeout_hours"
 	else
 		time_old=720
+		timeout="it.aitek.auto.pr.viaggi_timeout_minutes"
 	fi
 fi
 
@@ -129,6 +175,8 @@ path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 echo -e "...created folder '$VIAGGIO_DIR' at path: '$path_VIAGGIO_dir' \n"
 chmod 0777 "$path_VIAGGIO_dir"
 
+echo -e "...generating 'idTemporali' considering '$timeout' set to '$time_old' minutes \n\n"
+
 # extract event type from TRATTA
 length=${#TRATTA}
 i=0
@@ -140,7 +188,6 @@ while [[ $i -lt $length ]] ; do
 			touch $path_VIAGGIO_dir/$filename
 			echo -e "...creating file '$filename'\n"
 			echo -e "rete: $RETE_E\npunto: $PUNTO_E\nidTemporale: $id_temporale_ENTRATA\nserviceProvider: $SERVICE_PROVIDER\n$type_viaggio: $APPARATO \n"
-			# to do scrivi nel file .xml
 cat << EOF > "$path_VIAGGIO_dir/$filename"
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ns0:evento xmlns:ns0="http://transit.pr.auto.aitek.it/messages">
@@ -154,7 +201,7 @@ cat << EOF > "$path_VIAGGIO_dir/$filename"
 EOF
 if [ $type_viaggio == 'SET' ] ; then
 cat << EOF >> "$path_VIAGGIO_dir/$filename"	
-		<SET CodiceIssuer="${SERVICE_PROVIDER}" PAN="${APPARATO}" nazione="IT" EFCContextMark="604006001D09"/>
+		<SET CodiceIssuer="${SERVICE_PROVIDER}" PAN="${APPARATO}" nazione="${NAZ_SERVICE_PROVIDER}" EFCContextMark="604006001D09"/>
 EOF
 else
 cat << EOF >> "$path_VIAGGIO_dir/$filename"	
@@ -183,7 +230,7 @@ cat << EOF >> "$path_VIAGGIO_dir/$filename"
 EOF
 if [ $type_viaggio == 'SET' ] ; then
 cat << EOF >> "$path_VIAGGIO_dir/$filename"	
-		<SET CodiceIssuer="${SERVICE_PROVIDER}" PAN="${APPARATO}" nazione="IT"/>
+		<SET CodiceIssuer="${SERVICE_PROVIDER}" PAN="${APPARATO}" nazione="${NAZ_SERVICE_PROVIDER}"/>
 EOF
 else
 cat << EOF >> "$path_VIAGGIO_dir/$filename"	
@@ -212,7 +259,7 @@ EOF
 			fi
 			touch $path_VIAGGIO_dir/$filename
 			echo -e "...creating file '$filename'\n"
-			echo -e "rete: $RETE_U\npunto: $PUNTO_U\nidTemporale: $id_temporale_USCITA\nserviceProvider: $SERVICE_PROVIDER\n$type_viaggio: $APPARATO \n"
+			echo -e "rete: $RETE_U\npunto: $PUNTO_U\nidTemporale: $id_temporale_USCITA\nserviceProvider: $SERVICE_PROVIDER \n$type_viaggio: $APPARATO \n"
 
 cat << EOF > "$path_VIAGGIO_dir/$filename"
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -232,7 +279,7 @@ fi
 
 if [ $type_viaggio == 'SET' ] ; then
 cat << EOF >> "$path_VIAGGIO_dir/$filename"	
-		<SET CodiceIssuer="${SERVICE_PROVIDER}" PAN="${APPARATO}" nazione="IT" EFCContextMark="604006001D09"/>
+		<SET CodiceIssuer="${SERVICE_PROVIDER}" PAN="${APPARATO}" nazione="${NAZ_SERVICE_PROVIDER}" EFCContextMark="604006001D09"/>
 EOF
 else
 cat << EOF >> "$path_VIAGGIO_dir/$filename"	
@@ -296,7 +343,7 @@ cat << EOF > "$path_VIAGGIO_dir/$filename"
 EOF
 if [ $type_viaggio == 'SET' ] ; then
 cat << EOF >> "$path_VIAGGIO_dir/$filename"	
-		<SET CodiceIssuer="${SERVICE_PROVIDER}" PAN="${APPARATO}" nazione="IT" EFCContextMark="604006001D09"/>
+		<SET CodiceIssuer="${SERVICE_PROVIDER}" PAN="${APPARATO}" nazione="${NAZ_SERVICE_PROVIDER}" EFCContextMark="604006001D09"/>
 EOF
 else
 cat << EOF >> "$path_VIAGGIO_dir/$filename"	
