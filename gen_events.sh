@@ -5,48 +5,66 @@ echo "---------------------- Usage ----------------------"
 echo -e "\n   bash $0\n\n    -tr < tratta > (ex. 'EUS')\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ri < rete Itinere >\n    -pi < punto Itinere >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato ('o' for OBU or 's' for SET) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n"
 echo
 
+counter_args=0
+
 # Parsing degli OPTARGS
 while [[ "$#" -gt 0 ]] ; do
     case $1 in
         -tr) TRATTA="$2"
+				((counter_args++))
 			 	shift 2;;
 		-re) RETE_E="$2"
+			((counter_args++))
 			 	shift 2;;
         -ru) RETE_U="$2"
+			((counter_args++))
 			 	shift 2;;
 		-ri) RETE_I="$2"
+			((counter_args++))
 				shift 2;;
 		-pi) PUNTO_I="$2"
+			((counter_args++))
 				shift 2;;
 		-rs) RETE_S="$2"
+			((counter_args++))
 			 	shift 2;;
 		-pe) PUNTO_E="$2"
+			((counter_args++))
 			 	shift 2;;
         -pu) PUNTO_U="$2"
+			((counter_args++))
 			 	shift 2;;
 		-de) DATI_ENTRATA="$2"
+			((counter_args++))
 				shift 2;;
 		-ps) PUNTO_S="$2"
+			((counter_args++))
 			 	shift 2;;
 		-ap) APPARATO="$2"
+			((counter_args++))
 				shift 2;;
 		-sp) SERVICE_PROVIDER="$2"
+			((counter_args++))
 				shift 2;;
 		-pl) PLATE_NUMBER="$2"
+			((counter_args++))
 				shift 2;;
         *)  echo -e "Error: Invalid option $1\n"
 			exit 0
     esac
 done
 
-echo "apparato $APPARATO"
-exit 0
+
+if [ $counter_args -lt 6 ] ; then
+	echo "Argument error: please digit right command."
+	echo
+	exit 0
+fi
 
 providers_code=('151' '2321' '3000' '7' '49')
 naz_providers=('IT' 'IT' 'IT' 'DE' 'FR')
 rete_svincoli=('37')
 punti_svincoli=('427' '428' '470')
-
 
 # input validation
 if [ ${#TRATTA} -gt 3 ] ; then
@@ -143,9 +161,9 @@ elif [ $APPARATO == 'o' ] ; then
 	fi
 fi
 
-id_temporale_ENTRATA=$(date -d "-$(expr $time_old - 3) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
-id_temporale_ITINERE=$(date -d "-$(expr $time_old - 4) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
-id_temporale_USCITA=$(date -d "-$(expr $time_old - 5) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+id_temporale_ENTRATA=$(date -d "-$(expr $time_old - 2) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+id_temporale_ITINERE=$(date -d "-$(expr $time_old - 3) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+id_temporale_USCITA=$(date -d "-$(expr $time_old - 4) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 
 if [ $TRATTA == 'EUS' ] || [ $TRATTA == 'US' ] ; then
 	direction_svn='998'
@@ -155,7 +173,7 @@ if [ $TRATTA == 'EUS' ] || [ $TRATTA == 'US' ] ; then
 	fi
 elif [ $TRATTA == 'SEU' ] || [ $TRATTA == 'SU' ] ; then
 	direction_svn='997'
-	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - 3) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - 1) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 	if [ $TRATTA == 'SU' ] ; then 
 		aperto_BOOL=true
 	fi
