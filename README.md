@@ -15,7 +15,7 @@ i parametri da dare in pasto allo script sono:
     -ps) punto di Svincolo
 
     -ap) specifica la tipologia di apparato: SET (digitando 's') oppure OBU (digitando 'o')
-    -sp) specifica il ServiceProvider di riferimento
+    -sp) specifica il ServiceProvider di riferimento (attualmente è possibile usare solo i seguenti serviceProviders : '151' '2321' '3000' '7' '49')
     -pl) specifica la targa del veicolo (ex. AM000AM)
 
 
@@ -30,4 +30,14 @@ Lo script è pensato per automatizzare il più possibile la preparazione degli e
 -   dando in input la tratta, lo script riconosce se l'evento è di Sistema Aperto o Chiuso, se è uno svincoloPrima o Dopo e la sua direzione (997 o 998)
 
 una volta terminato il run, basterà eseguire il drag and drop dei file nelle code JMS dedicate.
+
+Alcuni esempi di casistiche con relativo comando bash da lanciare:
+
+-   Entrata + Uscita (con datiEntrata) SET ---> bash gen_events.sh -tr EU -re 1 -pe 557 -ru 1 -pu 558 -de y -ap s -sp 151 -pl AX000AA
+
+-   Entrata + Uscita + svincoloDopo SET ---> bash gen_events.sh -tr EUS -re 1 -pe 411 -ru 1 -pu 414 -de y -rs 37 -ps 428 -ap s -sp 151 -pl AM001AM  
+ 
+-   Uscita di sistema Aperto + svincoloDopo OBU ---> bash gen_events.sh -tr US -ru 34 -pu 469 -rs 37 -ps 428 -ap o -sp 49 -pl AC000BB
+ 
+-   Entrata + Uscita (SENZA datiEntrata) OBU ---> bash gen_events.sh -tr EU -re 1 -pe 412 -ru 1 -pu 413 -de n -ap o -sp 151 -pl AC000BB
 
