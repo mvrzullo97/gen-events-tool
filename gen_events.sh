@@ -11,7 +11,7 @@ counter_args=0
 while [[ "$#" -gt 0 ]] ; do
     case $1 in
         -tr) TRATTA="$2"
-				((counter_args++))
+			((counter_args++))
 			 	shift 2;;
 		-re) RETE_E="$2"
 			((counter_args++))
@@ -182,10 +182,18 @@ elif [ $TRATTA == 'U' ] ; then
 fi
 
 VIAGGIO_DIR="Viaggio$type_viaggio-$TRATTA"
+VIAGGIO_DIR_2="$VIAGGIO_DIR-conDatiEntrata"
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
+path_VIAGGIO_dir_2=$path_OUT_dir/$VIAGGIO_DIR_2
 
 if [ -d $path_VIAGGIO_dir ] ; then 
 	rm -r $path_VIAGGIO_dir
+fi
+
+if [ $dati_entrata_bool == true ]; then 
+	if [ -d $path_VIAGGIO_dir_2 ] ; then
+		rm -r $path_VIAGGIO_dir_2
+	fi
 fi
 
 mkdir $path_OUT_dir/$VIAGGIO_DIR
