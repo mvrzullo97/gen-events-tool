@@ -5,6 +5,9 @@ echo "---------------------- Usage ----------------------"
 echo -e "\n   bash $0\n\n    -tr < tratta > (ex. 'EUS')\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ri < rete Itinere >\n    -pi < punto Itinere >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato ('o' for OBU or 's' for SET) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n"
 echo
 
+# TO DO: 
+#	-	creare un file di conf in cui inserire diversi parametri tra cui timeout x apparato, e tempo di vecchiaia evento (per velocizzare i test), recupero di service provider e naz relativa
+
 counter_args=0
 
 # Parsing degli OPTARGS
@@ -59,12 +62,20 @@ if [ $counter_args -lt 6 ] ; then
 	echo "Argument error: please digit right command."
 	echo
 	exit 0
+
+elif { [ $TRATTA == 'US' ] || [ $TRATTA == 'SU' ]; } && [[ "$DATI_ENTRATA" =~ ^([yY])$ ]] ; then 
+	 echo -e "Param error: for tratta '$TRATTA' datiEntrata param (-de) makes no sense, please delete it or digit 'n' or 'N' \n"
+    exit 0 
 fi
 
 providers_code=('151' '2321' '3000' '7' '49')
 naz_providers=('IT' 'IT' 'IT' 'DE' 'FR')
 rete_svincoli=('37')
 punti_svincoli=('427' '428' '470')
+
+
+
+
 
 # input validation
 if [ ${#TRATTA} -gt 3 ] ; then
@@ -83,7 +94,7 @@ elif [[ $APPARATO != 'o' ]] && [[ $APPARATO != 's' ]] ; then
 	echo -e "Param error: please digit a valid apparato ('o' for OBU or 's' for SET) \n"
     exit 0
 elif ! [[ ${providers_code[@]} =~ $S_PROVIDER ]] ; then
-    echo -e "Param error: service provider's code '$SERVICE_PROVIDER' doesn't exist \n"
+    echo -e "Param error: codice service provider '$SERVICE_PROVIDER' doesn't exist \n"
     exit 0
 elif [ ${#PLATE_NUMBER} != 7 ] ; then 
     echo -e "Param error: length of targa veicolo must be 7 \n"
@@ -117,6 +128,7 @@ function generate_PAN
 }
 
 OUT_DIR="OUT_DIR_EVENTS"
+
 # create OUT_DIR if not exist
 if ! [ -d $OUT_DIR ] ; then
 	mkdir $OUT_DIR
@@ -129,7 +141,8 @@ fi
 
 # vars declaration
 sysdate=$(date +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
-timestamp_PAN=$(date +"%Y%m%d")
+timestamp_PAN=$(date +"%Y%m%d000%3N")
+
 aperto_BOOL=false
 
 plate_f=${PLATE_NUMBER:0:2}
@@ -152,7 +165,7 @@ elif [ $APPARATO == 'o' ] ; then
 	echo -e "...creating Viaggio 'OBU' for tratta '$TRATTA'\n"
 	# escamotage to gen OBU with "randomness"
 	APPARATO=$(date "+%S%2N")
-	if [ $TRATTA == 'EU' ] ; then 
+	if [ $TRATTA == 'EU' ] || [ $TRATTA == 'EIU' ]; then 
 		time_old=4320
 		timeout="it.aitek.auto.pr.viaggi.close_cert_timeout_hours"
 	else
@@ -181,7 +194,7 @@ elif [ $TRATTA == 'U' ] ; then
 	aperto_BOOL=true
 fi
 
-VIAGGIO_DIR="Viaggio$type_viaggio-$TRATTA"
+VIAGGIO_DIR="Viaggio-$type_viaggio-$TRATTA"
 VIAGGIO_DIR_2="$VIAGGIO_DIR-conDatiEntrata"
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 path_VIAGGIO_dir_2=$path_OUT_dir/$VIAGGIO_DIR_2
@@ -330,7 +343,7 @@ EOF
 mv "$path_VIAGGIO_dir/$filename" "$path_VIAGGIO_dir/"${filename%.*}conDatiEntrata.xml""
 filename="${filename%.*}conDatiEntrata.xml"
 mv "$path_OUT_dir/$VIAGGIO_DIR" $path_OUT_dir/"$VIAGGIO_DIR-conDatiEntrata"
-VIAGGIO_DIR="Viaggio$type_viaggio-$TRATTA-conDatiEntrata"
+VIAGGIO_DIR="Viaggio-$type_viaggio-$TRATTA-conDatiEntrata"
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 
 elif [ $aperto_BOOL == true ] ; then 
@@ -390,4 +403,3 @@ EOF
 done
 
 echo -e "...all files are present at path: '$path_VIAGGIO_dir' \n"
-
