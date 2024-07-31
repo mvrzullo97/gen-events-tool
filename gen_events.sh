@@ -5,12 +5,9 @@ echo "---------------------- Usage ----------------------"
 echo -e "\n   bash $0\n\n    -tr < tratta > (ex. 'EUS')\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ri < rete Itinere >\n    -pi < punto Itinere >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato ('o' for OBU or 's' for SET) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n"
 echo
 
-# TO DO: 
-#	-	creare un file di conf in cui inserire diversi parametri tra cui timeout x apparato, e tempo di vecchiaia evento (per velocizzare i test), recupero di service provider e naz relativa
-
 counter_args=0
 
-# Parsing degli OPTARGS
+# parsing degli OPTARGS
 while [[ "$#" -gt 0 ]] ; do
     case $1 in
         -tr) TRATTA="$2"
@@ -57,23 +54,58 @@ while [[ "$#" -gt 0 ]] ; do
     esac
 done
 
-
 if [ $counter_args -lt 6 ] ; then
 	echo "Argument error: please digit right command."
 	echo
 	exit 0
-
 elif { [ $TRATTA == 'US' ] || [ $TRATTA == 'SU' ]; } && [[ "$DATI_ENTRATA" =~ ^([yY])$ ]] ; then 
 	 echo -e "Param error: for tratta '$TRATTA' datiEntrata param (-de) makes no sense, please delete it or digit 'n' or 'N' \n"
     exit 0 
 fi
 
-providers_code=('151' '2321' '3000' '7' '49')
-naz_providers=('IT' 'IT' 'IT' 'DE' 'FR')
+
+
+# get conf_params from file, if exists
+file_conf='gen_events_conf.xml'
+dumb_nums='[0-9]+([.][0-9]+)?'
+
+if [ -f $file_conf ] ; then
+	echo -e "...recovered configuration params from file '$file_conf' \n"
+
+	timeout_SET=$(grep -e "timeout_SET" $file_conf | grep -oE $dumb_nums)
+	timeout_OBU=$(grep -e "timeout_OBU" $file_conf | grep -oE $dumb_nums)
+
+	old_age_Entrata=$(grep -e "old_age_Entrata" $file_conf | grep -oE $dumb_nums)
+	old_age_Itinere=$(grep -e "old_age_Itinere" $file_conf | grep -oE $dumb_nums)
+	old_age_Uscita=$(grep -e "old_age_Uscita" $file_conf | grep -oE $dumb_nums)
+	old_age_svincoloPrima=$(grep -e "old_age_svincoloPrima" $file_conf | grep -oE $dumb_nums)
+	old_age_svincoloDopo=$(grep -e "old_age_svincoloDopo" $file_conf | grep -oE $dumb_nums)
+
+	providers_code=()
+	providers_code=$((grep -e "providers_code" $file_conf) | cut -d '=' -f2 )
+	providers_code="${providers_code//','}"
+	providers_code=($providers_code)
+	
+	naz_providers=()
+	naz_providers=$((grep -e "naz_providers" $file_conf) | cut -d '=' -f2 )
+	naz_providers="${naz_providers//','}"
+	naz_providers=($naz_providers)  
+
+elif ! [ -f $file_conf ] ; then 
+	echo -e "...file '$file_conf' not found, I'll use deafult params \n"
+	timeout_SET=720
+	timeout_OBU=4320
+	old_age_Entrata=1
+	old_age_Itinere=2
+	old_age_Uscita=3
+	old_age_svincoloPrima=1
+	old_age_svincoloDopo=5
+	providers_code=('151' '2321' '3000' '7' '49')
+	naz_providers=('IT' 'IT' 'IT' 'DE' 'FR')
+fi
+
 rete_svincoli=('37')
 punti_svincoli=('427' '428' '470')
-
-
 
 
 
@@ -100,6 +132,7 @@ elif [ ${#PLATE_NUMBER} != 7 ] ; then
     echo -e "Param error: length of targa veicolo must be 7 \n"
     exit 0
 fi
+
 
 if [ $APPARATO == 's' ] ; then
 	declare -A hash_PVD_NAZ
@@ -158,7 +191,7 @@ if [ $APPARATO == 's' ] ; then
 	type_viaggio="SET"
 	echo -e "...creating Viaggio 'SET' for tratta '$TRATTA'\n"
 	APPARATO=$(generate_PAN $plate_number)
-	time_old=720
+	time_old=$timeout_SET
 	timeout="it.aitek.auto.pr.viaggi.close_cert_timeout_hours"
 elif [ $APPARATO == 'o' ] ; then
 	type_viaggio="OBU"
@@ -166,27 +199,27 @@ elif [ $APPARATO == 'o' ] ; then
 	# escamotage to gen OBU with "randomness"
 	APPARATO=$(date "+%S%2N")
 	if [ $TRATTA == 'EU' ] || [ $TRATTA == 'EIU' ]; then 
-		time_old=4320
+		time_old=$timeout_OBU
 		timeout="it.aitek.auto.pr.viaggi.close_cert_timeout_hours"
 	else
-		time_old=720
+		time_old=$timeout_SET
 		timeout="it.aitek.auto.pr.viaggi_timeout_minutes"
 	fi
 fi
 
-id_temporale_ENTRATA=$(date -d "-$(expr $time_old - 2) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
-id_temporale_ITINERE=$(date -d "-$(expr $time_old - 3) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
-id_temporale_USCITA=$(date -d "-$(expr $time_old - 4) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+id_temporale_ENTRATA=$(date -d "-$(expr $time_old - $old_age_Entrata) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+id_temporale_ITINERE=$(date -d "-$(expr $time_old - $old_age_Itinere) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+id_temporale_USCITA=$(date -d "-$(expr $time_old - $old_age_Uscita) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 
 if [ $TRATTA == 'EUS' ] || [ $TRATTA == 'US' ] ; then
 	direction_svn='998'
-	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - 10) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - $old_age_svincoloDopo) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 	if [ $TRATTA == 'US' ] ; then 
 		aperto_BOOL=true
 	fi
 elif [ $TRATTA == 'SEU' ] || [ $TRATTA == 'SU' ] ; then
 	direction_svn='997'
-	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - 1) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - $old_age_svincoloPrima) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
 	if [ $TRATTA == 'SU' ] ; then 
 		aperto_BOOL=true
 	fi
@@ -203,10 +236,8 @@ if [ -d $path_VIAGGIO_dir ] ; then
 	rm -r $path_VIAGGIO_dir
 fi
 
-if [ $dati_entrata_bool == true ]; then 
-	if [ -d $path_VIAGGIO_dir_2 ] ; then
-		rm -r $path_VIAGGIO_dir_2
-	fi
+if [[ $dati_entrata_bool == true ]] && [ -d $path_VIAGGIO_dir_2 ] ; then 
+	rm -r $path_VIAGGIO_dir_2
 fi
 
 mkdir $path_OUT_dir/$VIAGGIO_DIR
@@ -214,7 +245,8 @@ path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 echo -e "...created folder '$VIAGGIO_DIR' at path: '$path_VIAGGIO_dir' \n"
 chmod 0777 "$path_VIAGGIO_dir"
 
-echo -e "...generating 'idTemporali' considering '$timeout' set to '$time_old' minutes \n\n"
+echo -e "...generating 'idTemporali' considering '$timeout' set to '$time_old' minutes\n"
+echo -e ".......................................................................................................................................\n"
 
 # extract event type from TRATTA
 length=${#TRATTA}
