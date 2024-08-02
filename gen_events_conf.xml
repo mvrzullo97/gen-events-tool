@@ -1,0 +1,19 @@
+params configurations:
+
+#tempo espresso in minuti prima che un viaggio SET o OBU (con possibilità di svincolo) venga certificato
+timeout_SET = 720
+
+#tempo espresso in minuti prima che un viaggio OBU di sistema chiuso venga certificato
+timeout_OBU = 4320
+
+#minuti da sottrarre a sysdate - timeout_apparato per generare correttamente l'idTemporale dell'evento
+old_age_Entrata = 2
+old_age_Itinere = 3
+old_age_Uscita = 4
+old_age_svincoloPrima = 1
+old_age_svincoloDopo = 5
+
+#lista service provider e nazionalità relativa
+providers_code = 151, 2321, 3000, 7, 49
+naz_providers = IT, IT, IT, DE, FR
+
