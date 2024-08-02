@@ -59,7 +59,7 @@ if [ $counter_args -lt 6 ] ; then
 	echo
 	exit 0
 elif { [ $TRATTA == 'US' ] || [ $TRATTA == 'SU' ]; } && [[ "$DATI_ENTRATA" =~ ^([yY])$ ]] ; then 
-	 echo -e "Param error: for tratta '$TRATTA' datiEntrata param (-de) makes no sense, please delete it or digit 'n' or 'N' \n"
+	echo -e "Param error: for tratta '$TRATTA' datiEntrata param (-de) makes no sense, please delete it or digit 'n' or 'N' \n"
     exit 0 
 fi
 
@@ -89,7 +89,7 @@ if [ -f $file_conf ] ; then
 	naz_providers=()
 	naz_providers=$((grep -e "naz_providers" $file_conf) | cut -d '=' -f2 )
 	naz_providers="${naz_providers//','}"
-	naz_providers=($naz_providers)  
+	naz_providers=($naz_providers)
 
 elif ! [ -f $file_conf ] ; then 
 	echo -e "...file '$file_conf' not found, I'll use deafult params \n"
@@ -106,7 +106,6 @@ fi
 
 rete_svincoli=('37')
 punti_svincoli=('427' '428' '470')
-
 
 
 # input validation
