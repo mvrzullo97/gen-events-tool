@@ -1,4 +1,4 @@
-gen_events.sh è uno script bash sviluppato per semplificaree velocizzare la creazione di eventi SET o OBU da dare in pasto a LEV.
+gen_events.sh è uno script bash sviluppato per semplificare e velocizzare la creazione di eventi SET o OBU da dare in pasto a LEV.
 
 i parametri disponibili sono:
     
