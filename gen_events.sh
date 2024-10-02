@@ -2,8 +2,11 @@
 # usage menu
 echo
 echo "---------------------- Usage ----------------------"
-echo -e "\n   bash $0\n\n    -tr < tratta > (ex. 'EUS')\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ri < rete Itinere >\n    -pi < punto Itinere >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato ('o' for OBU or 's' for SET) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n"
+echo -e "\n   bash $0\n\n    -tr < tratta > (ex. 'EUS')\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ri < rete Itinere >\n    -pi < punto Itinere >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato ('o' for OBU or 's' for SET) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n    -cc < cashback cantieri (yY or nN) >\n"
 echo
+
+
+#to do . aggiungere possibilità di generazione Evento di Sconto per cashback cantieri
 
 counter_args=0
 
@@ -49,11 +52,18 @@ while [[ "$#" -gt 0 ]] ; do
 		-pl) PLATE_NUMBER="$2"
 			((counter_args++))
 				shift 2;;
+		-cc) CASHBACK_CANTIERI="$2"
+			((counter_args++))
+				shift 2;;
         *)  echo -e "Error: Invalid option $1\n"
 			exit 0
     esac
 done
 
+rete_svincoli=('37')
+punti_svincoli=('427' '428' '470')
+
+# input validation
 if [ $counter_args -lt 6 ] ; then
 	echo "Argument error: please digit right command."
 	echo
@@ -61,8 +71,31 @@ if [ $counter_args -lt 6 ] ; then
 elif { [ $TRATTA == 'US' ] || [ $TRATTA == 'SU' ]; } && [[ "$DATI_ENTRATA" =~ ^([yY])$ ]] ; then 
 	echo -e "Param error: for tratta '$TRATTA' datiEntrata param (-de) makes no sense, please delete it or digit 'n' or 'N' \n"
     exit 0 
+elif [ ${#TRATTA} -gt 3 ] ; then
+	echo -e "Param error: '$TRATTA' is not valid \n"
+	exit 0
+elif ! [[ "$DATI_ENTRATA" =~ ^([yY])$ ]] && ! [[ "$DATI_ENTRATA" =~ ^([nN])$ ]] && ! [[ "$DATI_ENTRATA" == '' ]] ; then
+    echo -e "Param error: please digit valid value for -de param (yY-nN) \n"
+    exit 0
+elif ! [[ ${rete_svincoli[@]} =~ $RETE_S ]] ; then
+    echo -e "Param error: rete svincolo '$RETE_S' doesn't exist \n"
+    exit 0 
+elif ! [[ ${punti_svincoli[@]} =~ $PUNTO_S ]] ; then
+    echo -e "Param error: punto svincolo '$PUNTO_S' doesn't exist \n"
+    exit 0
+elif [[ $APPARATO != 'o' ]] && [[ $APPARATO != 's' ]] ; then
+	echo -e "Param error: please digit a valid apparato ('o' for OBU or 's' for SET) \n"
+    exit 0
+elif [ ${#PLATE_NUMBER} != 7 ] ; then 
+    echo -e "Param error: length of targa veicolo must be 7 \n"
+    exit 0
+elif ! [[ "$CASHBACK_CANTIERI" =~ ^([yY])$ ]] && ! [[ "$CASHBACK_CANTIERI" =~ ^([nN])$ ]] && ! [[ "$CASHBACK_CANTIERI" == '' ]] ; then
+    echo -e "Param error: please digit valid value for -cc param (yY-nN) \n"
+    exit 0
+elif [[ $APPARATO == 'o' && "$CASHBACK_CANTIERI" =~ ^([yY])$ ]] ; then
+	echo -e "Param error: can not create a cashback file discount for OBU \n"
+	exit 0
 fi
-
 
 
 # get conf_params from file, if exists
@@ -104,34 +137,11 @@ elif ! [ -f $file_conf ] ; then
 	naz_providers=('IT' 'IT' 'IT' 'DE' 'FR')
 fi
 
-rete_svincoli=('37')
-punti_svincoli=('427' '428' '470')
 
-
-# input validation
-if [ ${#TRATTA} -gt 3 ] ; then
-	echo -e "Param error: '$TRATTA' is not valid \n"
-	exit 0
-elif ! [[ ${rete_svincoli[@]} =~ $RETE_S ]] ; then
-    echo -e "Param error: rete svincolo '$RETE_S' doesn't exist \n"
-    exit 0 
-elif ! [[ "$DATI_ENTRATA" =~ ^([yY])$ ]] && ! [[ "$DATI_ENTRATA" =~ ^([nN])$ ]] && ! [[ "$DATI_ENTRATA" == '' ]] ; then
-    echo -e "Param error: please digit valid value for -de param (yY-nN) \n"
-    exit 0
-elif ! [[ ${punti_svincoli[@]} =~ $PUNTO_S ]] ; then
-    echo -e "Param error: punto svincolo '$PUNTO_S' doesn't exist \n"
-    exit 0
-elif [[ $APPARATO != 'o' ]] && [[ $APPARATO != 's' ]] ; then
-	echo -e "Param error: please digit a valid apparato ('o' for OBU or 's' for SET) \n"
-    exit 0
-elif ! [[ ${providers_code[@]} =~ $S_PROVIDER ]] ; then
+if ! [[ ${providers_code[@]} =~ $S_PROVIDER ]] ; then
     echo -e "Param error: codice service provider '$SERVICE_PROVIDER' doesn't exist \n"
     exit 0
-elif [ ${#PLATE_NUMBER} != 7 ] ; then 
-    echo -e "Param error: length of targa veicolo must be 7 \n"
-    exit 0
 fi
-
 
 if [ $APPARATO == 's' ] ; then
 	declare -A hash_PVD_NAZ
@@ -141,6 +151,7 @@ if [ $APPARATO == 's' ] ; then
 	done
 	NAZ_SERVICE_PROVIDER=${hash_PVD_NAZ[$SERVICE_PROVIDER]}
 fi
+
 
 function generate_PAN 
 {
@@ -160,7 +171,6 @@ function generate_PAN
 }
 
 OUT_DIR="OUT_DIR_EVENTS"
-
 # create OUT_DIR if not exist
 if ! [ -d $OUT_DIR ] ; then
 	mkdir $OUT_DIR
@@ -173,7 +183,9 @@ fi
 
 # vars declaration
 sysdate=$(date +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
-timestamp_PAN=$(date +"%Y%m%d000%3N")
+
+# per ora 4n poi 3n
+timestamp_PAN=$(date +"%Y%m%d000%4N")
 
 aperto_BOOL=false
 
@@ -239,6 +251,21 @@ if [[ $dati_entrata_bool == true ]] && [ -d $path_VIAGGIO_dir_2 ] ; then
 	rm -r $path_VIAGGIO_dir_2
 fi
 
+
+
+
+# use only if you want generate multiple events
+#--------------
+#n_date=$(date +"%4N")
+#VIAGGIO_DIR="Viaggio-$type_viaggio-$TRATTA$n_date"
+#path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
+
+#mkdir $path_OUT_dir/$VIAGGIO_DIR
+#path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
+#-----------------
+
+
+#-- per il run normale devo decommentare le due righe sottostanti
 mkdir $path_OUT_dir/$VIAGGIO_DIR
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 echo -e "...created folder '$VIAGGIO_DIR' at path: '$path_VIAGGIO_dir' \n"
@@ -433,4 +460,30 @@ EOF
     esac
 done
 
+if ! [[ -z "${CASHBACK_CANTIERI}" ]] && [[ "$CASHBACK_CANTIERI" =~ ^([yY])$ ]] ; then
+	
+	cashback_filename="eventoDiSconto$type_viaggio-$TRATTA.xml"
+
+	cat << EOF > "$path_VIAGGIO_dir/$cashback_filename"
+<?xml version="1.0" encoding="UTF-8"?>
+<ns0:evento xmlns:ns0="http://transit.pr.auto.aitek.it/messages">
+	<tipoEvento cod="U"/>
+	<idSpaziale rete="${RETE_U}" punto="${PUNTO_U}" periferica="1" progrMsg="10865" corsia="0" dirMarcia="1" tipoPeriferica="P"/>
+	<idTemporale>${id_temporale_USCITA}</idTemporale>
+	<infoVeicolo classe="10">
+		<SET nazione="${NAZ_SERVICE_PROVIDER}" PAN="${APPARATO}" CodiceIssuer="${SERVICE_PROVIDER}" EFCContextMark="604006001D09"/>
+	</infoVeicolo>
+	<idViaggio tin=INSERT_TIN_HERE/>
+	<datiEntrata idTemporale="${id_temporale_ENTRATA}">
+		<stazione rete="${RETE_E}" punto="${PUNTO_E}"/>
+	</datiEntrata>
+	<reg dataOraMittente="${sysdate}"/>
+	<sconti idMessaggioSconto="1">
+		<sconto importo="15.2" codiceSconto="25"/>
+	</sconti>
+</ns0:evento>
+EOF
+echo -e "...creating file '$cashback_filename' for Cashback Cantieri discount \n"
+mv $path_VIAGGIO_dir $path_VIAGGIO_dir"CashbackCantieri"
+fi
 echo -e "...all files are present at path: '$path_VIAGGIO_dir' \n"
