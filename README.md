@@ -17,6 +17,7 @@ i parametri disponibili sono:
     -ap) specifica la tipologia di apparato: SET (digitando 's') oppure OBU (digitando 'o')
     -sp) specifica il ServiceProvider di riferimento (attualmente è possibile usare solo i seguenti serviceProviders : '151' '2321' '3000' '7' '49')
     -pl) specifica la targa del veicolo (ex. AM000AM)
+    -cc) permette di generare (yY) o meno (nN) il file 'EventoDiSconto' per il Cashback Cantieri
 
 
 All'interno della stessa cartella è presente un file chiamato 'gen_events_conf.xml' che permette di modificare secondo le proprie necessità diversi parametri dello script:
@@ -48,3 +49,4 @@ Alcuni esempi di casistiche con relativo comando bash da lanciare:
  
 -   Entrata + Uscita (SENZA datiEntrata) OBU ---> bash gen_events.sh -tr EU -re 1 -pe 412 -ru 1 -pu 413 -de n -ap o -sp 151 -pl AC000BB
 
+-   Entrata + Uscita (con datiEntrata e Casback Cantieri) SET ---> bash gen_events.sh -tr EU -re 1 -pe 20 -ru 1 -pu 28 -de y -ap s -sp 151 -pl AX000AA -cc y 
