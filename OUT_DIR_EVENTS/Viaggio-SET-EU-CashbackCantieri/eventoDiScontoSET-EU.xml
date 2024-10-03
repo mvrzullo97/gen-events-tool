@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns0:evento xmlns:ns0="http://transit.pr.auto.aitek.it/messages">
+	<tipoEvento cod="U"/>
+	<idSpaziale rete="1" punto="28" periferica="1" progrMsg="10865" corsia="0" dirMarcia="1" tipoPeriferica="P"/>
+	<idTemporale>2024-10-03T00:10:50.875+02:00</idTemporale>
+	<infoVeicolo classe="10">
+		<SET nazione="IT" PAN="2024100300085810000F" CodiceIssuer="151" EFCContextMark="604006001D09"/>
+	</infoVeicolo>
+	<idViaggio tin="INSERT_TIN_HERE"/>
+	<datiEntrata idTemporale="2024-10-03T00:05:50.866+02:00">
+		<stazione rete="1" punto="20"/>
+	</datiEntrata>
+	<reg dataOraMittente="2024-10-03T11:05:50.854+02:00"/>
+	<sconti idMessaggioSconto="1">
+		<sconto importo="15.2" codiceSconto="25"/>
+	</sconti>
+</ns0:evento>

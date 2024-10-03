@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns0:evento xmlns:ns0="http://transit.pr.auto.aitek.it/messages">
+    <tipoEvento cod="U" />
+    <idSpaziale periferica="62" progrMsg="4" corsia="0" dirMarcia="1" tipoPeriferica="P" rete="1" punto="28" />
+    <idTemporale>2024-10-03T00:11:09.604+02:00</idTemporale>
+    <infoVeicolo classe="10">
+        <targaAnt nomeFile="targaAnt.jpg" affid="9" nazione="IT">AX000AA</targaAnt>
+        <targaPost nomeFile="targaPost.jpg" affid="9" nazione="IT">AX000AA</targaPost>  
+        <targaRif nazione="IT">AX000AA</targaRif>
+		<SET CodiceIssuer="151" PAN="2024100300059030000F" nazione="IT" EFCContextMark="604006001D09"/>
+	</infoVeicolo>
+    <idViaggio mezzoPagamento="TL" />
+	<datiEntrata idTemporale="2024-10-03T00:06:09.596+02:00" pista="12" classe="10">
+	<stazione rete = "1" punto = "20"/>
+	</datiEntrata>
+    <reg dataOraMittente="2024-10-03T11:06:09.587+02:00" />
+</ns0:evento>
