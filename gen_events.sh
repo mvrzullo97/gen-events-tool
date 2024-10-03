@@ -239,33 +239,42 @@ elif [ $TRATTA == 'U' ] ; then
 fi
 
 VIAGGIO_DIR="Viaggio-$type_viaggio-$TRATTA"
-VIAGGIO_DIR_2="$VIAGGIO_DIR-conDatiEntrata"
+VIAGGIO_DIR_2=$VIAGGIO_DIR"-conDatiEntrata"
+VIAGGIO_DIR_3=$VIAGGIO_DIR"-CashbackCantieri"
+VIAGGIO_DIR_4=$VIAGGIO_DIR_2"-CashbackCantieri"
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 path_VIAGGIO_dir_2=$path_OUT_dir/$VIAGGIO_DIR_2
+path_VIAGGIO_dir_3=$path_OUT_dir/$VIAGGIO_DIR_3
+path_VIAGGIO_dir_4=$path_OUT_dir/$VIAGGIO_DIR_4
 
-if [ -d $path_VIAGGIO_dir ] ; then 
-	rm -r $path_VIAGGIO_dir
+
+if [[ -z "${CASHBACK_CANTIERI}" || "$CASHBACK_CANTIERI" =~ ^([nN])$ ]] ; then 
+	if [[ $dati_entrata_bool == "true" ]] ; then		
+		if [ -d $path_VIAGGIO_dir_2 ] ; then 
+			rm -r $path_VIAGGIO_dir_2
+			VIAGGIO_DIR=$VIAGGIO_DIR_2
+		else
+			VIAGGIO_DIR=$VIAGGIO_DIR_2
+		fi
+	elif [ -d $path_VIAGGIO_dir ] ; then 
+		rm -r $path_VIAGGIO_dir
+	fi
+elif ! [[ -z "${CASHBACK_CANTIERI}" ]] && [[ "$CASHBACK_CANTIERI" =~ ^([yY])$ ]] ; then
+	if [[ $dati_entrata_bool == "true" ]] ; then 
+		if [ -d $path_VIAGGIO_dir_4 ] ; then 
+			rm -r $path_VIAGGIO_dir_4
+			VIAGGIO_DIR=$VIAGGIO_DIR_4
+		else
+			VIAGGIO_DIR=$VIAGGIO_DIR_4
+		fi
+	elif [ -d $path_VIAGGIO_dir_3 ] ; then 
+		rm -r $path_VIAGGIO_dir_3
+		VIAGGIO_DIR=$VIAGGIO_DIR_3
+	else
+		VIAGGIO_DIR=$VIAGGIO_DIR_3
+	fi
 fi
 
-if [[ $dati_entrata_bool == true ]] && [ -d $path_VIAGGIO_dir_2 ] ; then 
-	rm -r $path_VIAGGIO_dir_2
-fi
-
-
-
-
-# use only if you want generate multiple events
-#--------------
-#n_date=$(date +"%4N")
-#VIAGGIO_DIR="Viaggio-$type_viaggio-$TRATTA$n_date"
-#path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
-
-#mkdir $path_OUT_dir/$VIAGGIO_DIR
-#path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
-#-----------------
-
-
-#-- per il run normale devo decommentare le due righe sottostanti
 mkdir $path_OUT_dir/$VIAGGIO_DIR
 path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
 echo -e "...created folder '$VIAGGIO_DIR' at path: '$path_VIAGGIO_dir' \n"
@@ -400,9 +409,7 @@ EOF
 
 mv "$path_VIAGGIO_dir/$filename" "$path_VIAGGIO_dir/"${filename%.*}conDatiEntrata.xml""
 filename="${filename%.*}conDatiEntrata.xml"
-mv "$path_OUT_dir/$VIAGGIO_DIR" $path_OUT_dir/"$VIAGGIO_DIR-conDatiEntrata"
-VIAGGIO_DIR="Viaggio-$type_viaggio-$TRATTA-conDatiEntrata"
-path_VIAGGIO_dir=$path_OUT_dir/$VIAGGIO_DIR
+
 
 elif [ $aperto_BOOL == true ] ; then 
 cat << EOF >> "$path_VIAGGIO_dir/$filename"
@@ -473,7 +480,7 @@ if ! [[ -z "${CASHBACK_CANTIERI}" ]] && [[ "$CASHBACK_CANTIERI" =~ ^([yY])$ ]] ;
 	<infoVeicolo classe="10">
 		<SET nazione="${NAZ_SERVICE_PROVIDER}" PAN="${APPARATO}" CodiceIssuer="${SERVICE_PROVIDER}" EFCContextMark="604006001D09"/>
 	</infoVeicolo>
-	<idViaggio tin=INSERT_TIN_HERE/>
+	<idViaggio tin="INSERT_TIN_HERE"/>
 	<datiEntrata idTemporale="${id_temporale_ENTRATA}">
 		<stazione rete="${RETE_E}" punto="${PUNTO_E}"/>
 	</datiEntrata>
@@ -484,6 +491,5 @@ if ! [[ -z "${CASHBACK_CANTIERI}" ]] && [[ "$CASHBACK_CANTIERI" =~ ^([yY])$ ]] ;
 </ns0:evento>
 EOF
 echo -e "...creating file '$cashback_filename' for Cashback Cantieri discount \n"
-mv $path_VIAGGIO_dir $path_VIAGGIO_dir"CashbackCantieri"
 fi
 echo -e "...all files are present at path: '$path_VIAGGIO_dir' \n"
