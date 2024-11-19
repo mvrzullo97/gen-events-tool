@@ -228,7 +228,7 @@ if [ $TRATTA == 'EUS' ] || [ $TRATTA == 'US' ] ; then
 	fi
 elif [ $TRATTA == 'SEU' ] || [ $TRATTA == 'SU' ] ; then
 	direction_svn='997'
-	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - $old_age_svincoloPrima) min" +"%Y-%m-%dT%H:%M:%S.000+01:00")
+	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - $old_age_svincoloPrima) min" +"%Y-%m-%dT%H:%M:%S.%3N%:z")
 	if [ $TRATTA == 'SU' ] ; then 
 		aperto_BOOL=true
 	fi
