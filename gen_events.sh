@@ -1,5 +1,6 @@
 #!/bin/bash
 # usage menu
+
 echo
 echo "---------------------- Usage ----------------------"
 echo -e "\n   bash $0\n\n    -tr < tratta > (ex. 'EUS')\n    -re < rete Entrata >\n    -pe < punto Entrata >\n    -ri < rete Itinere >\n    -pi < punto Itinere >\n    -ru < rete Uscita >\n    -pu < punto Uscita >\n    -de < datiEntrata > (yY or nN)\n    -rs < rete Svincolo >\n    -ps < punto Svincolo >\n    -ap < tipo apparato ('o' for OBU or 's' for SET) >\n    -sp < codice Service Provider >\n    -pl < targa veicolo >\n    -cc < cashback cantieri (yY or nN) >\n"
@@ -110,7 +111,7 @@ if [ -f $file_conf ] ; then
 	old_age_Uscita=$(grep -e "old_age_Uscita" $file_conf | grep -oE $dumb_nums)
 	old_age_svincoloPrima=$(grep -e "old_age_svincoloPrima" $file_conf | grep -oE $dumb_nums)
 	old_age_svincoloDopo=$(grep -e "old_age_svincoloDopo" $file_conf | grep -oE $dumb_nums)
-
+	
 	providers_code=()
 	providers_code=$((grep -e "providers_code" $file_conf) | cut -d '=' -f2 )
 	providers_code="${providers_code//','}"
@@ -179,7 +180,7 @@ else
 fi
 
 # vars declaration
-sysdate=$(date +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+sysdate=$(date +"%Y-%m-%dT%H:%M:%S.%3N%:z")
 
 # per ora 4n poi 3n
 timestamp_PAN=$(date +"%Y%m%d000%4N")
@@ -215,19 +216,19 @@ elif [ $APPARATO == 'o' ] ; then
 	fi
 fi
 
-id_temporale_ENTRATA=$(date -d "-$(expr $time_old - $old_age_Entrata) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
-id_temporale_ITINERE=$(date -d "-$(expr $time_old - $old_age_Itinere) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
-id_temporale_USCITA=$(date -d "-$(expr $time_old - $old_age_Uscita) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+id_temporale_ENTRATA=$(date -d "-$(expr $time_old - $old_age_Entrata) min" +"%Y-%m-%dT%H:%M:%S.%3N%:z")
+id_temporale_ITINERE=$(date -d "-$(expr $time_old - $old_age_Itinere) min" +"%Y-%m-%dT%H:%M:%S.%3N%:z")
+id_temporale_USCITA=$(date -d "-$(expr $time_old - $old_age_Uscita) min" +"%Y-%m-%dT%H:%M:%S.%3N%:z")
 
 if [ $TRATTA == 'EUS' ] || [ $TRATTA == 'US' ] ; then
 	direction_svn='998'
-	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - $old_age_svincoloDopo) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - $old_age_svincoloDopo) min" +"%Y-%m-%dT%H:%M:%S.%3N%:z")
 	if [ $TRATTA == 'US' ] ; then 
 		aperto_BOOL=true
 	fi
 elif [ $TRATTA == 'SEU' ] || [ $TRATTA == 'SU' ] ; then
 	direction_svn='997'
-	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - $old_age_svincoloPrima) min" +"%Y-%m-%dT%H:%M:%S.%3N+02:00")
+	id_temporale_SVINCOLO=$(date -d "-$(expr $time_old - $old_age_svincoloPrima) min" +"%Y-%m-%dT%H:%M:%S.000+01:00")
 	if [ $TRATTA == 'SU' ] ; then 
 		aperto_BOOL=true
 	fi
